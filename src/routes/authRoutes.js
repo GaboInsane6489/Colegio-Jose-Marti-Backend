@@ -1,13 +1,23 @@
 const express = require("express");
 const router = express.Router();
 
-// 📁 Importa el controlador de autenticación
-const { registerUser, loginUser } = require("../controllers/authController");
+// 📁 Controladores
+const {
+  registerUser,
+  loginUser,
+  pingUser,
+} = require("../controllers/authController");
 
-// 📝 Ruta para registrar un nuevo usuario
+// 🛡️ Middleware de autenticación
+const verifyToken = require("../middlewares/authMiddleware");
+
+// 📝 Registro de usuario (solo estudiantes)
 router.post("/register", registerUser);
 
-// 🔐 Ruta para iniciar sesión y obtener el JWT
+// 🔐 Inicio de sesión y obtención de JWT
 router.post("/login", loginUser);
+
+// 📡 Verifica sesión y devuelve rol del usuario
+router.get("/ping", verifyToken, pingUser);
 
 module.exports = router;

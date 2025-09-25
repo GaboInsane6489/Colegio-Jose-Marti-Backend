@@ -7,7 +7,9 @@ const mongoose = require("mongoose"); // ✅ Corrección: era "mongooses"
 const cors = require("cors");
 
 // 📁 Importa las rutas de autenticación
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./src/routes/authRoutes");
+const protectedRoutes = require("./src/routes/protectedRoutes");
+const adminRoutes = require("./src/routes/adminRoutes");
 
 // 🧠 Inicializa la aplicación Express
 const app = express(); // ✅ Corrección: faltaban los paréntesis
@@ -18,13 +20,12 @@ app.use(express.json()); // Permite recibir datos en formato JSON
 
 // 🧭 Rutas principales
 app.use("/api/auth", authRoutes); // Ruta base para login y registro
+app.use("/api", protectedRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 🔗 Conexión a MongoDB usando Mongoose
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true, // ✅ Corrección: era "useNewUrlParsel"
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Conectado a MongoDB")) // Mensaje de éxito
   .catch((err) => console.error("❌ Error de conexión:", err)); // ✅ Corrección: faltaba mostrar el error
 
