@@ -32,6 +32,11 @@ mongoose
 // 📡 Configura el puerto del servidor
 const PORT = process.env.PORT || 3000;
 
+// 🩺 Ruta raíz para verificación de estado
+app.get("/", (req, res) => {
+  res.status(200).send("✅ Backend Colegio José Martí activo");
+});
+
 // 🚀 Inicia el servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
