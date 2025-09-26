@@ -41,7 +41,7 @@ router.get(
     try {
       const pendientes = await User.find({
         isValidated: false,
-        role: "student",
+        role: "estudiante",
       });
 
       res.json({

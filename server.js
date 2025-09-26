@@ -3,41 +3,43 @@ require("dotenv").config();
 
 // 🚀 Importa las dependencias principales
 const express = require("express");
-const mongoose = require("mongoose"); // ✅ Corrección: era "mongooses"
+const mongoose = require("mongoose");
 const cors = require("cors");
+const morgan = require("morgan");
 
-// 📁 Importa las rutas de autenticación
+// 📁 Importa las rutas
 const authRoutes = require("./src/routes/authRoutes");
 const protectedRoutes = require("./src/routes/protectedRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
+const estudianteRoutes = require("./src/routes/estudianteRoutes"); // ✅ nueva ruta
 
 // 🧠 Inicializa la aplicación Express
-const app = express(); // ✅ Corrección: faltaban los paréntesis
+const app = express();
 
 // 🛡️ Middlewares globales
-app.use(cors()); // Habilita CORS para permitir peticiones entre dominios
-app.use(express.json()); // Permite recibir datos en formato JSON
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(express.json());
+app.use(morgan("dev")); // ✅ Logging institucional
 
 // 🧭 Rutas principales
-app.use("/api/auth", authRoutes); // Ruta base para login y registro
+app.use("/api/auth", authRoutes);
 app.use("/api", protectedRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/estudiante", estudianteRoutes); // ✅ activación de ruta estudiante
 
-// 🔗 Conexión a MongoDB usando Mongoose
+// 🔗 Conexión a MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Conectado a MongoDB")) // Mensaje de éxito
-  .catch((err) => console.error("❌ Error de conexión:", err)); // ✅ Corrección: faltaba mostrar el error
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch((err) => console.error("❌ Error de conexión:", err));
 
-// 📡 Configura el puerto del servidor
-const PORT = process.env.PORT || 3000;
-
-// 🩺 Ruta raíz para verificación de estado
+// 📡 Ruta raíz para verificación
 app.get("/", (req, res) => {
   res.status(200).send("✅ Backend Colegio José Martí activo");
 });
 
 // 🚀 Inicia el servidor
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
