@@ -33,6 +33,27 @@ router.patch(
   }
 );
 
+// ❌ Rechazar usuario (solo admin)
+router.delete(
+  "/rechazar/:id",
+  verifyToken,
+  verifyRole(["admin"]),
+  async (req, res) => {
+    try {
+      const user = await User.findByIdAndDelete(req.params.id);
+
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
+
+      res.json({ message: "❌ Usuario rechazado y eliminado", user });
+    } catch (error) {
+      console.error("❌ Error al rechazar usuario:", error);
+      res.status(500).json({ message: "Error interno al rechazar usuario" });
+    }
+  }
+);
+
 // 📋 Listar usuarios pendientes de validación (solo admin)
 router.get(
   "/pendientes",
@@ -52,6 +73,25 @@ router.get(
     } catch (error) {
       console.error("❌ Error al listar pendientes:", error);
       res.status(500).json({ message: "Error interno al listar pendientes" });
+    }
+  }
+);
+
+// 📦 Listar todos los usuarios (solo admin)
+router.get(
+  "/usuarios",
+  verifyToken,
+  verifyRole(["admin"]),
+  async (req, res) => {
+    try {
+      const usuarios = await User.find();
+      res.json({
+        message: `📦 Se encontraron ${usuarios.length} usuarios en total`,
+        usuarios,
+      });
+    } catch (error) {
+      console.error("❌ Error al listar usuarios:", error);
+      res.status(500).json({ message: "Error interno al listar usuarios" });
     }
   }
 );
