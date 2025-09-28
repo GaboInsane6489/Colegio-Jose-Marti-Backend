@@ -1,17 +1,18 @@
 // 📦 Carga las variables de entorno desde el archivo .env
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
 // 🚀 Importa las dependencias principales
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const morgan = require("morgan");
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import morgan from "morgan";
 
 // 📁 Importa las rutas
-const authRoutes = require("./src/routes/authRoutes");
-const protectedRoutes = require("./src/routes/protectedRoutes");
-const adminRoutes = require("./src/routes/adminRoutes");
-const estudianteRoutes = require("./src/routes/estudianteRoutes"); // ✅ nueva ruta
+import authRoutes from "./src/routes/authRoutes.js";
+import protectedRoutes from "./src/routes/protectedRoutes.js";
+import adminRoutes from "./src/routes/adminRoutes.js";
+import estudianteRoutes from "./src/routes/estudianteRoutes.js"; // ✅ nueva ruta
 
 // 🧠 Inicializa la aplicación Express
 const app = express();

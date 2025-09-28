@@ -1,8 +1,9 @@
-const express = require("express");
+import express from "express";
+import verifyToken from "../middlewares/authMiddleware.js";
+import verifyRole from "../middlewares/roleMiddleware.js";
+import User from "../models/User.js";
+
 const router = express.Router();
-const verifyToken = require("../middlewares/authMiddleware");
-const verifyRole = require("../middlewares/roleMiddleware");
-const User = require("../models/User");
 
 // ✅ Validar cuenta de usuario (solo admin)
 router.patch(
@@ -55,4 +56,4 @@ router.get(
   }
 );
 
-module.exports = router;
+export default router;

@@ -1,9 +1,9 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 // 📝 Registro de usuario
-const registerUser = async (req, res) => {
+export const registerUser = async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
@@ -33,11 +33,10 @@ const registerUser = async (req, res) => {
 };
 
 // 🔐 Login de usuario
-const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // ✅ Corrección: incluir el campo password explícitamente
     const user = await User.findOne({ email }).select("+password");
 
     if (!user)
@@ -71,7 +70,7 @@ const loginUser = async (req, res) => {
 };
 
 // 📡 Verifica sesión y devuelve rol del usuario
-const pingUser = async (req, res) => {
+export const pingUser = async (req, res) => {
   try {
     const user = req.user;
 
@@ -90,5 +89,3 @@ const pingUser = async (req, res) => {
     res.status(500).json({ message: "Error al verificar sesión", error });
   }
 };
-
-module.exports = { registerUser, loginUser, pingUser };

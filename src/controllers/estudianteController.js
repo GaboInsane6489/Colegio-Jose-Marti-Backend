@@ -1,7 +1,7 @@
-const Clase = require("../models/Clase");
+import Clase from "../models/Clase.js";
 
 // 📚 Obtener clases activas del estudiante
-const obtenerClases = async (req, res) => {
+export const obtenerClases = async (req, res) => {
   try {
     const estudianteId = req.user.id;
 
@@ -12,8 +12,4 @@ const obtenerClases = async (req, res) => {
     console.error("❌ Error al obtener clases:", error);
     res.status(500).json({ message: "Error interno al obtener clases" });
   }
-};
-
-module.exports = {
-  obtenerClases,
 };

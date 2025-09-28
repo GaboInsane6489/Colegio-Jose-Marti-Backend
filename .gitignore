@@ -1,29 +1,41 @@
-# Node modules
+# 📦 Node modules
 node_modules/
 
-# Logs
+# 🧪 Logs y depuración
 logs/
 *.log
 npm-debug.log*
 
-# Environment variables
+# 🔐 Variables de entorno
 .env
 
-# Sistema operativo
+# 🖥️ Archivos del sistema operativo
 .DS_Store
 Thumbs.db
 
-# Editor de código
+# 🛠️ Configuración del editor
 .vscode/
 .idea/
 
-# Archivos temporales
+# 🧼 Archivos temporales
 *.swp
 *.swo
 
-# Producción
+# 🏗️ Archivos de producción
 dist/
 build/
 
-# Otros
+# 📊 Cobertura de tests
 coverage/
+
+# 🧬 Scripts de inicialización (no versionar datos sensibles)
+scripts/seedAdmin.js
+
+# 🧪 Dumps o backups
+*.dump
+*.bak
+*.sql
+
+# 🧩 Archivos generados por Render (si usas render.yaml)
+render.yaml
+

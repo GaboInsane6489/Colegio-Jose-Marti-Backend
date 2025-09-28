@@ -1,7 +1,8 @@
-const express = require("express");
+import express from "express";
+import verifyToken from "../middlewares/authMiddleware.js";
+import verifyRole from "../middlewares/roleMiddleware.js";
+
 const router = express.Router();
-const verifyToken = require("../middlewares/authMiddleware");
-const verifyRole = require("../middlewares/roleMiddleware");
 
 // 🔐 Ruta protegida general (cualquier usuario autenticado)
 router.get("/protegida", verifyToken, (req, res) => {
@@ -32,4 +33,4 @@ router.get(
   }
 );
 
-module.exports = router;
+export default router;
