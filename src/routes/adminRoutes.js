@@ -12,11 +12,14 @@ router.patch(
   verifyRole(["admin"]),
   async (req, res) => {
     try {
-      const user = await User.findById(req.params.id);
+      console.log("🔐 Usuario autenticado:", req.user);
 
-      if (!user) {
+      const { id } = req.params;
+      if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+
+      const user = await User.findById(id);
+      if (!user)
         return res.status(404).json({ message: "Usuario no encontrado" });
-      }
 
       if (user.isValidated) {
         return res.status(400).json({ message: "El usuario ya está validado" });
@@ -25,9 +28,10 @@ router.patch(
       user.isValidated = true;
       await user.save();
 
-      res.json({ message: "✅ Usuario validado correctamente", user });
+      console.log(`✅ Usuario validado: ${user.email}`);
+      res.json({ message: "Usuario validado correctamente", user });
     } catch (error) {
-      console.error("❌ Error al validar usuario:", error);
+      console.error("❌ Error al validar usuario:", error.message);
       res.status(500).json({ message: "Error interno al validar usuario" });
     }
   }
@@ -40,15 +44,19 @@ router.delete(
   verifyRole(["admin"]),
   async (req, res) => {
     try {
-      const user = await User.findByIdAndDelete(req.params.id);
+      console.log("🔐 Usuario autenticado:", req.user);
 
-      if (!user) {
+      const { id } = req.params;
+      if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+
+      const user = await User.findByIdAndDelete(id);
+      if (!user)
         return res.status(404).json({ message: "Usuario no encontrado" });
-      }
 
-      res.json({ message: "❌ Usuario rechazado y eliminado", user });
+      console.log(`❌ Usuario rechazado: ${user.email}`);
+      res.json({ message: "Usuario rechazado y eliminado", user });
     } catch (error) {
-      console.error("❌ Error al rechazar usuario:", error);
+      console.error("❌ Error al rechazar usuario:", error.message);
       res.status(500).json({ message: "Error interno al rechazar usuario" });
     }
   }
@@ -61,17 +69,20 @@ router.get(
   verifyRole(["admin"]),
   async (req, res) => {
     try {
+      console.log("🔐 Usuario autenticado:", req.user);
+
       const pendientes = await User.find({
         isValidated: false,
         role: "estudiante",
       });
 
+      console.log(`📋 Pendientes encontrados: ${pendientes.length}`);
       res.json({
-        message: `🔍 Se encontraron ${pendientes.length} usuarios pendientes`,
+        message: `Se encontraron ${pendientes.length} usuarios pendientes`,
         pendientes,
       });
     } catch (error) {
-      console.error("❌ Error al listar pendientes:", error);
+      console.error("❌ Error al listar pendientes:", error.message);
       res.status(500).json({ message: "Error interno al listar pendientes" });
     }
   }
@@ -84,13 +95,16 @@ router.get(
   verifyRole(["admin"]),
   async (req, res) => {
     try {
+      console.log("🔐 Usuario autenticado:", req.user);
+
       const usuarios = await User.find();
+      console.log(`📦 Usuarios encontrados: ${usuarios.length}`);
       res.json({
-        message: `📦 Se encontraron ${usuarios.length} usuarios en total`,
+        message: `Se encontraron ${usuarios.length} usuarios en total`,
         usuarios,
       });
     } catch (error) {
-      console.error("❌ Error al listar usuarios:", error);
+      console.error("❌ Error al listar usuarios:", error.message);
       res.status(500).json({ message: "Error interno al listar usuarios" });
     }
   }

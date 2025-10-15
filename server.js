@@ -15,6 +15,7 @@ import protectedRoutes from "./src/routes/protectedRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import estudianteRoutes from "./src/routes/estudianteRoutes.js";
 import estadisticasRoutes from "./src/routes/estadisticas.js";
+import docenteRoutes from "./src/routes/docentesRoutes.js";
 
 // 🧠 Inicializa la aplicación Express
 const app = express();
@@ -50,6 +51,7 @@ app.use("/api", protectedRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/estudiante", estudianteRoutes);
 app.use("/api/estadisticas", estadisticasRoutes);
+app.use("/api/docentes", docenteRoutes); //
 
 // 🔗 Conexión a MongoDB
 mongoose

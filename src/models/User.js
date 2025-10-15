@@ -1,8 +1,15 @@
 import mongoose from "mongoose";
 
-// 🧬 Esquema del usuario
+// 🧬 Esquema del usuario institucional
 const userSchema = new mongoose.Schema(
   {
+    nombre: {
+      type: String,
+      required: [true, "El nombre completo es obligatorio"],
+      trim: true,
+      minlength: [3, "El nombre debe tener al menos 3 caracteres"],
+      maxlength: [100, "El nombre no puede exceder 100 caracteres"],
+    },
     email: {
       type: String,
       required: [true, "El correo es obligatorio"],
@@ -15,12 +22,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "La contraseña es obligatoria"],
       minlength: [6, "La contraseña debe tener al menos 6 caracteres"],
-      select: false, // 🔐 Evita que se devuelva por defecto en consultas
+      select: false, // 🔐 Oculta el campo en consultas por defecto
     },
     role: {
       type: String,
       enum: ["admin", "docente", "estudiante"], // 🎓 Roles permitidos
-      default: "estudiante", // 🧑‍🎓 Valor por defecto
+      default: "estudiante",
       required: [true, "El rol es obligatorio"],
     },
     isValidated: {
@@ -31,9 +38,10 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // 🕒 Guarda fecha de creación y actualización
+    versionKey: false, // 🧼 Elimina el campo __v
   }
 );
 
-// 🧾 Exporta el modelo
+// 🧾 Exporta el modelo institucional
 const User = mongoose.model("User", userSchema);
 export default User;
