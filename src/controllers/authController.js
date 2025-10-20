@@ -2,14 +2,24 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// 📝 Registro de usuario (estudiante desde frontend)
+/**
+ * 📝 Registro de usuario desde el frontend
+ */
 export const registerUser = async (req, res) => {
   try {
     const { nombre, email, password, role } = req.body;
 
+    if (!email || !password || !role || !nombre) {
+      return res
+        .status(400)
+        .json({ message: "Todos los campos son obligatorios" });
+    }
+
     const existingUser = await User.findOne({ email });
-    if (existingUser)
+    if (existingUser) {
+      console.warn(`⚠️ Intento de registro duplicado: ${email}`);
       return res.status(400).json({ message: "El usuario ya existe" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -23,6 +33,7 @@ export const registerUser = async (req, res) => {
 
     await newUser.save();
 
+    console.log(`✅ Usuario registrado: ${email} (${role})`);
     res.status(201).json({
       message:
         "Usuario registrado correctamente. Pendiente de validación por el administrador.",
@@ -33,34 +44,39 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// 🔐 Login de usuario (por nombre o correo)
+/**
+ * 🔐 Login universal
+ */
 export const loginUser = async (req, res) => {
   try {
-    const { nombre, email, password } = req.body;
+    const email = req.body.email || req.body.correo;
+    const { password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email y contraseña requeridos" });
+    }
 
     const user = await User.findOne({ email }).select("+password");
-    if (!user)
+    if (!user) {
+      console.warn(`⚠️ Login fallido: usuario no encontrado → ${email}`);
       return res.status(404).json({ message: "Usuario no encontrado" });
+    }
 
-    if (!user.isValidated)
+    if (!user.isValidated) {
+      console.warn(`⚠️ Login bloqueado: cuenta no validada → ${email}`);
       return res.status(403).json({
         message: "Cuenta pendiente de validación por el administrador",
       });
-
-    const nombreCoincide =
-      user.nombre?.trim().toLowerCase() === nombre?.trim().toLowerCase();
-
-    if (!nombreCoincide && user.email !== email)
-      return res
-        .status(401)
-        .json({ message: "Nombre o correo no coinciden con el registro" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    if (!isMatch) {
+      console.warn(`⚠️ Login fallido: contraseña incorrecta → ${email}`);
       return res.status(401).json({ message: "Contraseña incorrecta" });
+    }
 
     if (!process.env.JWT_SECRET) {
-      console.error("❌ JWT_SECRET no está definido en el entorno");
+      console.error("❌ JWT_SECRET no está definido");
       return res
         .status(500)
         .json({ message: "Error interno de configuración" });
@@ -77,19 +93,23 @@ export const loginUser = async (req, res) => {
       { expiresIn: "1h" }
     );
 
+    console.log(`✅ Login exitoso: ${email} (${user.role})`);
     res.status(200).json({ message: "Login exitoso", token });
   } catch (error) {
-    console.error("❌ Error en el login:", error.message, error.stack);
+    console.error("❌ Error en el login:", error.message);
     res.status(500).json({ message: "Error en el login" });
   }
 };
 
-// 📡 Verifica sesión y devuelve rol del usuario
+/**
+ * 📡 Verifica sesión activa
+ */
 export const pingUser = async (req, res) => {
   try {
     const user = req.user;
 
     if (!user) {
+      console.warn("🔒 Ping fallido: usuario no autenticado");
       return res.status(401).json({ message: "Usuario no autenticado" });
     }
 
@@ -105,19 +125,22 @@ export const pingUser = async (req, res) => {
   }
 };
 
-// 🛠️ Creación de usuario institucional desde el panel admin
+/**
+ * 🛠️ Creación de usuario institucional desde el panel admin
+ */
 export const crearUsuarioDesdeAdmin = async (req, res) => {
   try {
     const { nombre, email, role, password } = req.body;
 
-    if (!email || !role || !password) {
+    if (!email || !role || !password || !nombre) {
       return res
         .status(400)
-        .json({ message: "Correo, rol y contraseña son obligatorios" });
+        .json({ message: "Nombre, correo, rol y contraseña son obligatorios" });
     }
 
     const existente = await User.findOne({ email });
     if (existente) {
+      console.warn(`⚠️ Usuario ya existe: ${email}`);
       return res.status(409).json({ message: "El correo ya está registrado" });
     }
 

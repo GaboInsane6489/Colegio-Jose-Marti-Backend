@@ -13,7 +13,7 @@ const verifyToken = (req, res, next) => {
   }
 
   if (!process.env.JWT_SECRET) {
-    console.error("❌ JWT_SECRET no está definido en el entorno");
+    console.error("❌ JWT_SECRET no definido en el entorno");
     return res.status(500).json({ message: "Error interno de configuración" });
   }
 

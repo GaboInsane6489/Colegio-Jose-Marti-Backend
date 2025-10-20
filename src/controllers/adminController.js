@@ -1,10 +1,12 @@
+import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 
-// ✅ Validar usuario por ID
+/**
+ * ✅ Validar usuario por ID
+ * Marca al usuario como validado institucionalmente.
+ */
 export const validarUsuario = async (req, res) => {
   try {
-    console.log("🔐 Usuario autenticado:", req.user);
-
     const { id } = req.params;
     if (!id) {
       return res
@@ -14,7 +16,6 @@ export const validarUsuario = async (req, res) => {
 
     const user = await User.findById(id);
     if (!user) {
-      console.warn(`🔍 Usuario no encontrado: ${id}`);
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
@@ -33,17 +34,17 @@ export const validarUsuario = async (req, res) => {
   }
 };
 
-// 🔍 Listar usuarios pendientes de validación
+/**
+ * 🔍 Listar usuarios pendientes de validación
+ * Filtra por estudiantes no validados.
+ */
 export const listarPendientes = async (req, res) => {
   try {
-    console.log("🔐 Usuario autenticado:", req.user);
-
     const pendientes = await User.find({
       isValidated: false,
       role: "estudiante",
     });
 
-    console.log(`📋 Pendientes encontrados: ${pendientes.length}`);
     res.json({ message: "Usuarios pendientes encontrados", pendientes });
   } catch (error) {
     console.error("❌ Error al listar pendientes:", error.message);
@@ -51,14 +52,14 @@ export const listarPendientes = async (req, res) => {
   }
 };
 
-// 📦 Listar todos los usuarios (resumen)
+/**
+ * 📦 Listar todos los usuarios (resumen institucional)
+ * Devuelve email, rol y estado de validación.
+ */
 export const listarTodosUsuarios = async (req, res) => {
   try {
-    console.log("🔐 Usuario autenticado:", req.user);
-
     const usuarios = await User.find({}, "email role isValidated");
 
-    console.log(`📦 Usuarios encontrados: ${usuarios.length}`);
     res.json({ message: "Usuarios listados correctamente", usuarios });
   } catch (error) {
     console.error("❌ Error al listar todos los usuarios:", error.message);
@@ -66,11 +67,69 @@ export const listarTodosUsuarios = async (req, res) => {
   }
 };
 
-// ❌ Rechazar (eliminar) usuario por ID
+/**
+ * 📋 Listar todos los docentes institucionales
+ * Filtra por rol "docente" y excluye contraseña.
+ */
+export const listarDocentes = async (req, res) => {
+  try {
+    const docentes = await User.find({ role: "docente" }).select("-password");
+    res
+      .status(200)
+      .json({ message: "Docentes listados correctamente", docentes });
+  } catch (error) {
+    console.error("❌ Error al listar docentes:", error.message);
+    res.status(500).json({ message: "Error interno al listar docentes" });
+  }
+};
+
+/**
+ * ✏️ Actualizar usuario institucional por ID
+ * Permite modificar datos, incluyendo contraseña (con hash).
+ */
+export const actualizarUsuario = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const actualizaciones = { ...req.body };
+
+    if (actualizaciones.password) {
+      actualizaciones.password = await bcrypt.hash(
+        actualizaciones.password,
+        10
+      );
+    }
+
+    const usuarioActualizado = await User.findByIdAndUpdate(
+      id,
+      actualizaciones,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
+
+    if (!usuarioActualizado) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res
+      .status(200)
+      .json({
+        message: "Usuario actualizado correctamente",
+        usuarioActualizado,
+      });
+  } catch (error) {
+    console.error("❌ Error al actualizar usuario:", error.message);
+    res.status(400).json({ message: "Error al actualizar usuario" });
+  }
+};
+
+/**
+ * ❌ Rechazar (eliminar) usuario por ID
+ * Elimina usuarios no validados desde el panel admin.
+ */
 export const rechazarUsuario = async (req, res) => {
   try {
-    console.log("🔐 Usuario autenticado:", req.user);
-
     const { id } = req.params;
     if (!id) {
       return res
@@ -80,7 +139,6 @@ export const rechazarUsuario = async (req, res) => {
 
     const user = await User.findByIdAndDelete(id);
     if (!user) {
-      console.warn(`🔍 Usuario no encontrado para eliminación: ${id}`);
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
