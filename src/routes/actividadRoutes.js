@@ -1,11 +1,11 @@
 import { Router } from "express";
 import {
   crearActividad,
-  listarActividadesPorCurso,
+  obtenerActividades, // ✅ nombre actualizado
   editarActividad,
   eliminarActividad,
   notificarEstudiantes,
-  obtenerTodasLasActividades, // 🐞 Ruta de depuración
+  obtenerTodasLasActividades,
 } from "../controllers/actividadController.js";
 
 import { verifyToken, verifyRole } from "../middlewares/index.js";
@@ -13,14 +13,7 @@ import { verifyToken, verifyRole } from "../middlewares/index.js";
 const router = Router();
 
 /**
- * 📌 Crear nueva actividad
- * Acceso: Docente autenticado
- * Método: POST /api/actividades
- */
-router.post("/", verifyToken, verifyRole(["docente"]), crearActividad);
-
-/**
- * 📋 Listar actividades por curso
+ * 📋 Obtener actividades por curso (con filtros)
  * Acceso: Docente o estudiante autenticado
  * Método: GET /api/actividades?cursoId=...
  */
@@ -28,7 +21,7 @@ router.get(
   "/",
   verifyToken,
   verifyRole(["docente", "estudiante"]),
-  listarActividadesPorCurso
+  obtenerActividades // ✅ controlador corregido
 );
 
 /**
@@ -42,6 +35,13 @@ router.get(
   verifyRole(["docente"]),
   obtenerTodasLasActividades
 );
+
+/**
+ * 📌 Crear nueva actividad
+ * Acceso: Docente autenticado
+ * Método: POST /api/actividades
+ */
+router.post("/", verifyToken, verifyRole(["docente"]), crearActividad);
 
 /**
  * ✏️ Editar actividad existente

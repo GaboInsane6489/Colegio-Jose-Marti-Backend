@@ -49,19 +49,23 @@ const crearActividad = async (req, res = response) => {
     });
   }
 
-  if (typeof ponderacion !== "number" || ponderacion < 0 || ponderacion > 100) {
-    return res
-      .status(400)
-      .json({ ok: false, msg: "La ponderación debe estar entre 0 y 100." });
+  const ponderacionNum =
+    typeof ponderacion === "string" ? parseFloat(ponderacion) : ponderacion;
+  if (isNaN(ponderacionNum) || ponderacionNum < 0 || ponderacionNum > 100) {
+    return res.status(400).json({
+      ok: false,
+      msg: "La ponderación debe estar entre 0 y 100.",
+    });
   }
 
   if (
     !mongoose.Types.ObjectId.isValid(cursoId) ||
     !mongoose.Types.ObjectId.isValid(docenteId)
   ) {
-    return res
-      .status(400)
-      .json({ ok: false, msg: "ID de curso o docente no válido." });
+    return res.status(400).json({
+      ok: false,
+      msg: "ID de curso o docente no válido.",
+    });
   }
 
   try {
@@ -70,7 +74,7 @@ const crearActividad = async (req, res = response) => {
       descripcion: descripcion?.trim() || "",
       tipo: tipo.trim(),
       fechaEntrega: entregaDate,
-      ponderacion,
+      ponderacion: ponderacionNum,
       materia: materia.trim(),
       cursoId: new mongoose.Types.ObjectId(cursoId),
       docenteId: new mongoose.Types.ObjectId(docenteId),
@@ -130,16 +134,14 @@ const editarActividad = async (req, res = response) => {
       actividad.fechaEntrega = nuevaFecha;
     }
     if (ponderacion != null) {
-      if (
-        typeof ponderacion !== "number" ||
-        ponderacion < 0 ||
-        ponderacion > 100
-      ) {
+      const ponderacionNum =
+        typeof ponderacion === "string" ? parseFloat(ponderacion) : ponderacion;
+      if (isNaN(ponderacionNum) || ponderacionNum < 0 || ponderacionNum > 100) {
         return res
           .status(400)
           .json({ ok: false, msg: "La ponderación debe estar entre 0 y 100." });
       }
-      actividad.ponderacion = ponderacion;
+      actividad.ponderacion = ponderacionNum;
     }
     if (materia) actividad.materia = materia.trim();
     if (Array.isArray(recursos)) actividad.recursos = recursos;
@@ -190,28 +192,49 @@ const eliminarActividad = async (req, res = response) => {
   }
 };
 
-// 📋 Listar actividades por curso
-const listarActividadesPorCurso = async (req, res = response) => {
-  const { cursoId } = req.query;
+// 📋 Obtener actividades por curso con filtros
+const obtenerActividades = async (req, res = response) => {
+  const { cursoId, tipo, estado, materia } = req.query;
 
-  if (!cursoId || !mongoose.Types.ObjectId.isValid(cursoId)) {
+  if (
+    !cursoId ||
+    typeof cursoId !== "string" ||
+    !mongoose.Types.ObjectId.isValid(cursoId)
+  ) {
+    console.warn("⚠️ cursoId inválido recibido:", cursoId);
     return res.status(400).json({
       ok: false,
       msg: "ID de curso inválido o no proporcionado.",
     });
   }
 
+  const filtros = { cursoId };
+
+  if (tipo && tipo !== "todos") filtros.tipo = tipo;
+  if (estado && estado !== "todos") filtros.estado = estado;
+  if (materia && materia !== "todos") filtros.materia = materia;
+
   try {
-    const actividades = await Actividad.find({ cursoId }).sort({
+    const actividades = await Actividad.find(filtros).sort({
       fechaEntrega: 1,
     });
 
+    const limpias = actividades.filter(
+      (act) =>
+        act &&
+        typeof act === "object" &&
+        act.fechaEntrega &&
+        act.tipo &&
+        act.materia &&
+        act.titulo
+    );
+
     return res.status(200).json({
       ok: true,
-      actividades,
+      actividades: limpias,
     });
   } catch (error) {
-    console.error("❌ Error al listar actividades:", error.message);
+    console.error("❌ Error al obtener actividades:", error.message);
     return res.status(500).json({
       ok: false,
       msg: "Error interno al obtener actividades",
@@ -232,17 +255,17 @@ const notificarEstudiantes = async (req, res = response) => {
         .json({ ok: false, msg: "Actividad no encontrada." });
     }
 
-    // Simulación de envío de notificaciones (puedes integrar correo, push, etc.)
-    const estudiantes = actividad.cursoId.estudiantes || [];
+    const estudiantes = Array.isArray(actividad.cursoId?.estudiantes)
+      ? actividad.cursoId.estudiantes
+      : [];
 
-    if (!Array.isArray(estudiantes) || estudiantes.length === 0) {
+    if (estudiantes.length === 0) {
       return res.status(200).json({
         ok: true,
         msg: "No hay estudiantes registrados en el curso para notificar.",
       });
     }
 
-    // Aquí podrías integrar un servicio real de notificación
     const notificados = estudiantes.map((est) => ({
       estudianteId: est,
       mensaje: `📣 Nueva actividad: ${actividad.titulo}`,
@@ -263,15 +286,25 @@ const notificarEstudiantes = async (req, res = response) => {
   }
 };
 
-// 🐞 Obtener todas las actividades (sin filtro)
+// 🧾 Obtener todas las actividades (sin filtro)
 const obtenerTodasLasActividades = async (req, res = response) => {
   try {
-    const actividades = await Actividad.find().sort({ fechaEntrega: 1 });
+    const actividades = await Actividad.find().sort({ fechaEntrega: 1 }).lean();
+
+    const limpias = actividades.filter(
+      (act) =>
+        act &&
+        typeof act === "object" &&
+        act.fechaEntrega &&
+        act.tipo &&
+        act.materia &&
+        act.titulo
+    );
 
     return res.status(200).json({
       ok: true,
-      total: actividades.length,
-      actividades,
+      total: limpias.length,
+      actividades: limpias,
     });
   } catch (error) {
     console.error("❌ Error al obtener todas las actividades:", error.message);
@@ -283,12 +316,11 @@ const obtenerTodasLasActividades = async (req, res = response) => {
   }
 };
 
-// 🧾 Exportación institucional única
 export {
   crearActividad,
   editarActividad,
   eliminarActividad,
-  listarActividadesPorCurso,
+  obtenerActividades,
   notificarEstudiantes,
   obtenerTodasLasActividades,
 };

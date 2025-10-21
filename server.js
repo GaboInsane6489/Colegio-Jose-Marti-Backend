@@ -29,13 +29,20 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn("❌ CORS bloqueado para origen:", origin);
+        callback(new Error("No permitido por CORS"));
+      }
+    },
     credentials: true,
   })
 );
 
-app.use(express.json({ limit: "10mb" }));
 app.use(helmet());
+app.use(express.json({ limit: "10mb" }));
 
 // 🧾 Logging condicional
 if (process.env.NODE_ENV !== "production") {
