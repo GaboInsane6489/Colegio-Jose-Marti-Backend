@@ -34,6 +34,11 @@ const ActividadSchema = new Schema(
       required: [true, "La materia es obligatoria"],
       trim: true,
     },
+    lapso: {
+      type: String,
+      enum: ["Lapso 1", "Lapso 2", "Lapso 3"],
+      required: [true, "El lapso académico es obligatorio"],
+    },
     cursoId: {
       type: Schema.Types.ObjectId,
       ref: "Curso",
@@ -85,6 +90,14 @@ const ActividadSchema = new Schema(
 ActividadSchema.virtual("curso", {
   ref: "Curso",
   localField: "cursoId",
+  foreignField: "_id",
+  justOne: true,
+});
+
+// 🔗 Virtual para docente simplificado
+ActividadSchema.virtual("docente", {
+  ref: "Usuario",
+  localField: "docenteId",
   foreignField: "_id",
   justOne: true,
 });

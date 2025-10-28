@@ -1,11 +1,10 @@
 import { Router } from "express";
 import {
   crearActividad,
-  obtenerActividades, // ✅ nombre actualizado
+  obtenerActividades,
   editarActividad,
   eliminarActividad,
   notificarEstudiantes,
-  obtenerTodasLasActividades,
 } from "../controllers/actividadController.js";
 
 import { verifyToken, verifyRole } from "../middlewares/index.js";
@@ -15,25 +14,13 @@ const router = Router();
 /**
  * 📋 Obtener actividades por curso (con filtros)
  * Acceso: Docente o estudiante autenticado
- * Método: GET /api/actividades?cursoId=...
+ * Método: GET /api/actividades?cursoId=...&tipo=...&estado=...&materia=...&lapso=...
  */
 router.get(
   "/",
   verifyToken,
   verifyRole(["docente", "estudiante"]),
-  obtenerActividades // ✅ controlador corregido
-);
-
-/**
- * 🐞 Ruta de depuración: obtener todas las actividades sin filtro
- * Acceso: Docente autenticado
- * Método: GET /api/actividades/debug/todas
- */
-router.get(
-  "/debug/todas",
-  verifyToken,
-  verifyRole(["docente"]),
-  obtenerTodasLasActividades
+  obtenerActividades
 );
 
 /**

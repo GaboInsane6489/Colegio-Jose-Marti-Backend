@@ -12,6 +12,7 @@ const crearActividad = async (req, res = response) => {
     ponderacion,
     cursoId,
     materia,
+    lapso,
     recursos = [],
   } = req.body;
 
@@ -24,11 +25,20 @@ const crearActividad = async (req, res = response) => {
     ponderacion == null ||
     !cursoId ||
     !docenteId ||
-    !materia?.trim()
+    !materia?.trim() ||
+    !lapso?.trim()
   ) {
     return res.status(400).json({
       ok: false,
       msg: "Faltan campos obligatorios para crear la actividad.",
+    });
+  }
+
+  const lapsosValidos = ["Lapso 1", "Lapso 2", "Lapso 3"];
+  if (!lapsosValidos.includes(lapso)) {
+    return res.status(400).json({
+      ok: false,
+      msg: "Lapso académico inválido.",
     });
   }
 
@@ -76,6 +86,7 @@ const crearActividad = async (req, res = response) => {
       fechaEntrega: entregaDate,
       ponderacion: ponderacionNum,
       materia: materia.trim(),
+      lapso: lapso.trim(),
       cursoId: new mongoose.Types.ObjectId(cursoId),
       docenteId: new mongoose.Types.ObjectId(docenteId),
       recursos,
@@ -109,6 +120,7 @@ const editarActividad = async (req, res = response) => {
     fechaEntrega,
     ponderacion,
     materia,
+    lapso,
     recursos,
     estado,
   } = req.body;
@@ -144,6 +156,15 @@ const editarActividad = async (req, res = response) => {
       actividad.ponderacion = ponderacionNum;
     }
     if (materia) actividad.materia = materia.trim();
+    if (lapso) {
+      const lapsosValidos = ["Lapso 1", "Lapso 2", "Lapso 3"];
+      if (!lapsosValidos.includes(lapso)) {
+        return res
+          .status(400)
+          .json({ ok: false, msg: "Lapso académico inválido." });
+      }
+      actividad.lapso = lapso.trim();
+    }
     if (Array.isArray(recursos)) actividad.recursos = recursos;
     if (estado) actividad.estado = estado;
 
@@ -159,6 +180,68 @@ const editarActividad = async (req, res = response) => {
     return res.status(500).json({
       ok: false,
       msg: "Error interno al editar actividad",
+      error: error.message,
+    });
+  }
+};
+
+// 📋 Obtener actividades por curso con filtros
+const obtenerActividades = async (req, res = response) => {
+  const { cursoId, tipo, estado, materia, lapso } = req.query;
+  const docenteId = req.user?.userId;
+
+  if (
+    !cursoId ||
+    typeof cursoId !== "string" ||
+    !mongoose.Types.ObjectId.isValid(cursoId)
+  ) {
+    console.warn("⚠️ cursoId inválido recibido:", cursoId);
+    return res.status(400).json({
+      ok: false,
+      msg: "ID de curso inválido o no proporcionado.",
+    });
+  }
+
+  if (!docenteId || !mongoose.Types.ObjectId.isValid(docenteId)) {
+    return res.status(401).json({
+      ok: false,
+      msg: "ID de docente inválido o no autenticado.",
+    });
+  }
+
+  const filtros = {
+    cursoId,
+    docenteId: new mongoose.Types.ObjectId(docenteId),
+  };
+
+  if (tipo && tipo !== "todos") filtros.tipo = tipo;
+  if (estado && estado !== "todos") filtros.estado = estado;
+  if (materia && materia !== "todos") filtros.materia = materia;
+  if (lapso && lapso !== "todos") filtros.lapso = lapso;
+
+  try {
+    const actividades = await Actividad.find(filtros).sort({ fechaEntrega: 1 });
+
+    const limpias = actividades.filter(
+      (act) =>
+        act &&
+        typeof act === "object" &&
+        act.fechaEntrega &&
+        act.tipo &&
+        act.materia &&
+        act.titulo &&
+        act.lapso
+    );
+
+    return res.status(200).json({
+      ok: true,
+      actividades: limpias,
+    });
+  } catch (error) {
+    console.error("❌ Error al obtener actividades:", error.message);
+    return res.status(500).json({
+      ok: false,
+      msg: "Error interno al obtener actividades",
       error: error.message,
     });
   }
@@ -192,57 +275,6 @@ const eliminarActividad = async (req, res = response) => {
   }
 };
 
-// 📋 Obtener actividades por curso con filtros
-const obtenerActividades = async (req, res = response) => {
-  const { cursoId, tipo, estado, materia } = req.query;
-
-  if (
-    !cursoId ||
-    typeof cursoId !== "string" ||
-    !mongoose.Types.ObjectId.isValid(cursoId)
-  ) {
-    console.warn("⚠️ cursoId inválido recibido:", cursoId);
-    return res.status(400).json({
-      ok: false,
-      msg: "ID de curso inválido o no proporcionado.",
-    });
-  }
-
-  const filtros = { cursoId };
-
-  if (tipo && tipo !== "todos") filtros.tipo = tipo;
-  if (estado && estado !== "todos") filtros.estado = estado;
-  if (materia && materia !== "todos") filtros.materia = materia;
-
-  try {
-    const actividades = await Actividad.find(filtros).sort({
-      fechaEntrega: 1,
-    });
-
-    const limpias = actividades.filter(
-      (act) =>
-        act &&
-        typeof act === "object" &&
-        act.fechaEntrega &&
-        act.tipo &&
-        act.materia &&
-        act.titulo
-    );
-
-    return res.status(200).json({
-      ok: true,
-      actividades: limpias,
-    });
-  } catch (error) {
-    console.error("❌ Error al obtener actividades:", error.message);
-    return res.status(500).json({
-      ok: false,
-      msg: "Error interno al obtener actividades",
-      error: error.message,
-    });
-  }
-};
-
 // 📣 Notificar estudiantes sobre actividad
 const notificarEstudiantes = async (req, res = response) => {
   const { id } = req.params;
@@ -269,7 +301,15 @@ const notificarEstudiantes = async (req, res = response) => {
     const notificados = estudiantes.map((est) => ({
       estudianteId: est,
       mensaje: `📣 Nueva actividad: ${actividad.titulo}`,
+      fecha: new Date(),
+      actividadId: actividad.id,
     }));
+
+    // Aquí podrías guardar las notificaciones en una colección si lo deseas
+    // await Notificacion.insertMany(notificados);
+
+    actividad.notificada = true;
+    await actividad.save();
 
     return res.status(200).json({
       ok: true,
@@ -286,41 +326,10 @@ const notificarEstudiantes = async (req, res = response) => {
   }
 };
 
-// 🧾 Obtener todas las actividades (sin filtro)
-const obtenerTodasLasActividades = async (req, res = response) => {
-  try {
-    const actividades = await Actividad.find().sort({ fechaEntrega: 1 }).lean();
-
-    const limpias = actividades.filter(
-      (act) =>
-        act &&
-        typeof act === "object" &&
-        act.fechaEntrega &&
-        act.tipo &&
-        act.materia &&
-        act.titulo
-    );
-
-    return res.status(200).json({
-      ok: true,
-      total: limpias.length,
-      actividades: limpias,
-    });
-  } catch (error) {
-    console.error("❌ Error al obtener todas las actividades:", error.message);
-    return res.status(500).json({
-      ok: false,
-      msg: "Error interno al obtener actividades",
-      error: error.message,
-    });
-  }
-};
-
 export {
   crearActividad,
   editarActividad,
   eliminarActividad,
   obtenerActividades,
   notificarEstudiantes,
-  obtenerTodasLasActividades,
 };

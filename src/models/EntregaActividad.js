@@ -14,14 +14,30 @@ const EntregaSchema = new Schema(
       ref: "Usuario",
       required: true,
     },
-    archivoUrl: String,
-    fechaEntrega: Date,
-    calificacion: Number,
-    comentarioDocente: String,
+    archivoUrl: {
+      type: String,
+      trim: true,
+    },
+    fechaEntrega: {
+      type: Date,
+    },
+    calificacion: {
+      type: Number,
+      min: 0,
+      max: 100,
+    },
+    comentarioDocente: {
+      type: String,
+      trim: true,
+    },
     estado: {
       type: String,
-      enum: ["entregado", "pendiente", "vencido"],
+      enum: ["pendiente", "entregado", "vencido", "revisado"],
       default: "pendiente",
+    },
+    notificacionId: {
+      type: Schema.Types.ObjectId,
+      ref: "Notificacion",
     },
   },
   { timestamps: true }
