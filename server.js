@@ -22,10 +22,7 @@ import entregaRoutes from "./src/routes/entregaRoutes.js";
 const app = express();
 
 // 🛡️ Seguridad y CORS
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://colegio-jose-marti-frontend.onrender.com",
-];
+const allowedOrigins = [process.env.CLIENT_ORIGIN, "http://localhost:5173"];
 
 app.use(
   cors({
