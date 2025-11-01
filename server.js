@@ -46,6 +46,7 @@ app.use(helmet());
 app.use(express.json({ limit: "10mb" }));
 
 // 🧾 Logging condicional
+const isDev = process.env.NODE_ENV !== "production";
 if (isDev) {
   app.use(morgan("dev"));
 }
