@@ -22,12 +22,11 @@ import entregaRoutes from "./src/routes/entregaRoutes.js";
 const app = express();
 
 // 🛡️ Seguridad y CORS
-const isDev = process.env.NODE_ENV !== "production";
 const allowedOrigins = [
-  process.env.CLIENT_ORIGIN, // 🌐 Producción (Render)
-  isDev && "http://localhost:5173", // 🧪 Dev con Vite
-  isDev && "http://localhost:3000", // 🧪 Build local con `serve dist`
-].filter(Boolean);
+  process.env.CLIENT_ORIGIN,
+  "http://localhost:5173",
+  "http://localhost:3000", // ✅ siempre permitido para pruebas locales
+];
 
 app.use(
   cors({
