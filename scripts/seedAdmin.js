@@ -49,8 +49,8 @@ const seedAdmins = async () => {
           nombre: admin.nombre,
           email: admin.email,
           password: hashedPassword,
-          role: "admin",
-          isValidated: true,
+          role: "admin", // 🔐 Rol fijo institucional
+          isValidated: true, // ✅ Validación automática
         });
 
         await newAdmin.save();
