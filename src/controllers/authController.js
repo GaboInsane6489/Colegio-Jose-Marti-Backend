@@ -94,7 +94,11 @@ export const loginUser = async (req, res) => {
     );
 
     console.log(`✅ Login exitoso: ${email} (${user.role})`);
-    res.status(200).json({ message: "Login exitoso", token });
+    res.status(200).json({
+      message: "Login exitoso",
+      token,
+      role: user.role, // ✅ Corrección crítica
+    });
   } catch (error) {
     console.error("❌ Error en el login:", error.message);
     res.status(500).json({ message: "Error en el login" });
