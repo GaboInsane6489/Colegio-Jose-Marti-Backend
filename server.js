@@ -1,6 +1,12 @@
-// 📦 Carga las variables de entorno
+// 📦 Carga las variables de entorno según el entorno actual
 import dotenv from "dotenv";
-dotenv.config();
+
+// 🧭 Detecta si estamos en producción o desarrollo
+const envFile =
+  process.env.NODE_ENV === "production" ? ".env.production" : ".env";
+
+// 🧪 Carga el archivo correcto (.env para local, .env.production para Render si lo usas)
+dotenv.config({ path: envFile });
 
 // 🚀 Dependencias principales
 import express from "express";
@@ -17,15 +23,16 @@ import estudianteRoutes from "./src/routes/estudianteRoutes.js";
 import estadisticasRoutes from "./src/routes/estadisticas.js";
 import actividadRoutes from "./src/routes/actividadRoutes.js";
 import entregaRoutes from "./src/routes/entregaRoutes.js";
+import docenteRoutes from "./src/routes/docenteRoutes.js";
 
 // 🧠 Inicializa Express
 const app = express();
 
 // 🛡️ Seguridad y CORS
 const allowedOrigins = [
-  process.env.CLIENT_ORIGIN,
-  "http://localhost:5173",
-  "http://localhost:3000", // ✅ siempre permitido para pruebas locales
+  process.env.CLIENT_ORIGIN, // 🌐 origen definido en .env o .env.production
+  "http://localhost:5173", // 🧪 frontend local (Vite)
+  "http://localhost:3000", // 🧪 frontend alternativo (React puro)
 ];
 
 app.use(
@@ -42,13 +49,16 @@ app.use(
   })
 );
 
+// 🛡️ Seguridad básica
 app.use(helmet());
+
+// 📦 Permite recibir JSON grandes (hasta 10MB)
 app.use(express.json({ limit: "10mb" }));
 
-// 🧾 Logging condicional
+// 🧾 Logging condicional solo en desarrollo
 const isDev = process.env.NODE_ENV !== "production";
 if (isDev) {
-  app.use(morgan("dev"));
+  app.use(morgan("dev")); // 🐛 muestra logs en consola
 }
 
 // 🧭 Rutas principales
@@ -59,11 +69,12 @@ app.use("/api/estudiante", estudianteRoutes);
 app.use("/api/estadisticas", estadisticasRoutes);
 app.use("/api/actividades", actividadRoutes);
 app.use("/api/entregas", entregaRoutes);
+app.use("/api/docente", docenteRoutes); // ✅ Rutas para docentes
 
 // 🔗 Conexión a MongoDB
 if (!process.env.MONGO_URI) {
   console.error("❌ MONGO_URI no definido en el entorno");
-  process.exit(1);
+  process.exit(1); // ⛔ detiene el servidor si no hay URI
 }
 
 mongoose
@@ -71,7 +82,7 @@ mongoose
   .then(() => console.log("✅ Conectado a MongoDB"))
   .catch((err) => {
     console.error("❌ Error de conexión a MongoDB:", err.message);
-    process.exit(1);
+    process.exit(1); // ⛔ detiene el servidor si falla la conexión
   });
 
 // 📡 Ruta raíz institucional
@@ -79,6 +90,7 @@ app.get("/", (req, res) => {
   res.status(200).json({
     ok: true,
     msg: "✅ Backend Colegio José Martí activo",
+    entorno: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });
 });
@@ -86,5 +98,7 @@ app.get("/", (req, res) => {
 // 🚀 Inicia el servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(
+    `🚀 Servidor corriendo en puerto ${PORT} (${process.env.NODE_ENV})`
+  );
 });
