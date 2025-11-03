@@ -1,5 +1,10 @@
 import jwt from "jsonwebtoken";
 
+/**
+ * 🔐 Middleware institucional para verificar token JWT
+ * Inyecta req.user con { userId, email, role, isValidated }
+ * Responde con 401 si no hay token, 403 si es inválido, 500 si falta JWT_SECRET
+ */
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -20,6 +25,7 @@ const verifyToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // 🧠 Inyección institucional de usuario
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
@@ -27,7 +33,7 @@ const verifyToken = (req, res, next) => {
       isValidated: decoded.isValidated,
     };
 
-    console.log(`✅ Token verificado para: ${decoded.email} (${decoded.role})`);
+    console.log(`✅ Token verificado: ${decoded.email} (${decoded.role})`);
     next();
   } catch (error) {
     console.error("❌ Token inválido o expirado:", error.message);
