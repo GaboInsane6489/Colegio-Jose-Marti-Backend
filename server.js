@@ -25,15 +25,15 @@ import actividadRoutes from "./src/routes/actividadRoutes.js";
 import entregaRoutes from "./src/routes/entregaRoutes.js";
 import docenteRoutes from "./src/routes/docenteRoutes.js";
 import claseRoutes from "./src/routes/claseRoutes.js";
-import usuarioRoutes from "./src/routes/usuarioRoutes.js"; // ✅ Nueva ruta para usuarios por rol
+import usuarioRoutes from "./src/routes/usuarioRoutes.js";
 
 // 🧠 Inicializa Express
 const app = express();
 
 // 🛡️ Seguridad y CORS
-const allowedOrigins = [
-  process.env.CLIENT_ORIGIN,
+const allowedOrigins = process.env.CLIENT_ORIGIN?.split(",") ?? [
   "http://localhost:5173",
+  "http://localhost:4173",
   "http://localhost:3000",
 ];
 
@@ -70,7 +70,7 @@ app.use("/api/actividades", actividadRoutes);
 app.use("/api/entregas", entregaRoutes);
 app.use("/api/docente", docenteRoutes);
 app.use("/api/clases", claseRoutes);
-app.use("/api/usuarios", usuarioRoutes); // ✅ nueva ruta activa
+app.use("/api/usuarios", usuarioRoutes);
 app.use("/api", protectedRoutes); // 🔒 rutas protegidas genéricas
 
 // 🔗 Conexión a MongoDB
@@ -102,12 +102,13 @@ app.get("/", (req, res) => {
 
 // 🧱 Sirve frontend en producción (si aplica)
 if (process.env.NODE_ENV === "production") {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const clientPath = path.join(__dirname, "dist");
 
   app.use(express.static(clientPath));
 
-  app.get("*", (req, res) => {
+  app.use((req, res) => {
     res.sendFile(path.join(clientPath, "index.html"));
   });
 }

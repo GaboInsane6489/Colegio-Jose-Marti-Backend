@@ -70,10 +70,13 @@ export const listarTodosUsuarios = async (req, res) => {
 /**
  * 📋 Listar todos los docentes institucionales
  * Filtra por rol "docente" y excluye contraseña.
+ * ✅ Incluye _id explícitamente para React
  */
 export const listarDocentes = async (req, res) => {
   try {
-    const docentes = await User.find({ role: "docente" }).select("-password");
+    const docentes = await User.find({ role: "docente" }).select(
+      "nombre email isValidated _id"
+    );
     res
       .status(200)
       .json({ message: "Docentes listados correctamente", docentes });
@@ -112,12 +115,10 @@ export const actualizarUsuario = async (req, res) => {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Usuario actualizado correctamente",
-        usuarioActualizado,
-      });
+    res.status(200).json({
+      message: "Usuario actualizado correctamente",
+      usuarioActualizado,
+    });
   } catch (error) {
     console.error("❌ Error al actualizar usuario:", error.message);
     res.status(400).json({ message: "Error al actualizar usuario" });
