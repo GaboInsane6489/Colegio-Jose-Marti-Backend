@@ -1,22 +1,24 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import User from "../src/models/User.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import Usuario from "../src/models/User.js"; // ← ajusta si tu modelo está en otra ruta
 
-dotenv.config();
+// 🧠 Carga del .env desde la raíz del proyecto
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-const seedAdmins = async () => {
+const seedAdmin = async () => {
   try {
     const mongoUri = process.env.MONGO_URI;
-    if (!mongoUri) {
-      console.error("❌ MONGO_URI no está definido en el entorno");
+    if (!mongoUri || mongoUri.length < 10) {
+      console.error("❌ MONGO_URI no está definido o es inválido");
       return;
     }
 
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    console.log("🧪 MONGO_URI leído:", mongoUri);
+    await mongoose.connect(mongoUri);
     console.log("✅ Conectado a MongoDB");
 
     const admins = [
@@ -33,28 +35,32 @@ const seedAdmins = async () => {
     ];
 
     for (const admin of admins) {
-      if (!admin.nombre || !admin.email || !admin.password) {
+      const email = admin.email?.toLowerCase().trim();
+      const nombre = admin.nombre?.trim();
+      const password = admin.password?.trim();
+
+      if (!nombre || !email || !password) {
         console.warn(`⚠️ Datos incompletos para: ${JSON.stringify(admin)}`);
         continue;
       }
 
-      const exists = await User.findOne({ email: admin.email });
+      const existe = await Usuario.findOne({ email });
 
-      if (exists) {
-        console.log(`🔁 Ya existe: ${admin.email}`);
+      if (existe) {
+        console.log(`🔁 Ya existe: ${email}`);
       } else {
-        const hashedPassword = await bcrypt.hash(admin.password, 10);
+        const hashed = await bcrypt.hash(password, 10);
 
-        const newAdmin = new User({
-          nombre: admin.nombre,
-          email: admin.email,
-          password: hashedPassword,
-          role: "admin", // 🔐 Rol fijo institucional
-          isValidated: true, // ✅ Validación automática
+        const nuevoAdmin = new Usuario({
+          nombre,
+          email,
+          password: hashed,
+          role: "admin",
+          isValidated: true,
         });
 
-        await newAdmin.save();
-        console.log(`🎉 Administrador creado: ${admin.nombre}`);
+        await nuevoAdmin.save();
+        console.log(`🎉 Administrador creado: ${nombre}`);
       }
     }
   } catch (error) {
@@ -65,4 +71,4 @@ const seedAdmins = async () => {
   }
 };
 
-seedAdmins();
+seedAdmin();

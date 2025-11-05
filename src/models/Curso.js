@@ -19,13 +19,13 @@ const cursoSchema = new mongoose.Schema(
     },
     docenteId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Usuario", // Asegúrate de que el modelo de usuario se llame así
+      ref: "Usuario", // ✅ referencia institucional al modelo de usuario
       required: true,
     },
     estudiantes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Usuario", // Si los estudiantes también están en el modelo Usuario
+        ref: "Usuario", // ✅ estudiantes también referenciados como usuarios
       },
     ],
     materias: [
@@ -36,7 +36,7 @@ const cursoSchema = new mongoose.Schema(
     ],
   },
   {
-    timestamps: true,
+    timestamps: true, // ✅ incluye createdAt y updatedAt
   }
 );
 

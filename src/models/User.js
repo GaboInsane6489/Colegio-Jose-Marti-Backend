@@ -42,6 +42,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// 🧾 Exporta el modelo institucional
+// 🧾 Registro institucional como "User"
+// Esto permite usar .populate("docente") y .populate("estudiantes") en otros modelos
 const User = mongoose.model("User", userSchema);
 export default User;

@@ -6,29 +6,61 @@ const verifyRole = (rolesPermitidos = []) => {
   return (req, res, next) => {
     const user = req.user;
 
-    if (!user) {
-      console.warn("🔒 Acceso bloqueado: usuario no autenticado");
-      return res.status(401).json({ ok: false, msg: "Usuario no autenticado" });
-    }
-
-    if (!user.role) {
-      console.warn(`🔒 Acceso bloqueado: rol no definido para ${user.email}`);
-      return res.status(403).json({ ok: false, msg: "Rol no definido" });
-    }
-
-    if (!rolesPermitidos.includes(user.role)) {
+    // 🧠 Validación de autenticación previa
+    if (!user || typeof user !== "object") {
       console.warn(
-        `⛔ Acceso denegado para ${user.email} → rol '${user.role}' no permitido`
+        `🔒 Acceso bloqueado: usuario no autenticado → ${req.originalUrl}`
+      );
+      return res.status(401).json({
+        ok: false,
+        msg: "Usuario no autenticado",
+        ruta: req.originalUrl,
+      });
+    }
+
+    const { email = "usuario desconocido", role } = user;
+
+    // 🧠 Validación de rol presente
+    if (!role || typeof role !== "string") {
+      console.warn(
+        `🔒 Acceso bloqueado: rol no definido para ${email} → ${req.originalUrl}`
+      );
+      return res.status(403).json({
+        ok: false,
+        msg: "Rol no definido o inválido",
+        ruta: req.originalUrl,
+      });
+    }
+
+    // 🧠 Validación de rol permitido con protección defensiva
+    if (!Array.isArray(rolesPermitidos)) {
+      console.error(
+        `❌ rolesPermitidos debe ser un array. Recibido: ${rolesPermitidos}`
+      );
+      return res.status(500).json({
+        ok: false,
+        msg: "Configuración de roles inválida en middleware",
+        ruta: req.originalUrl,
+      });
+    }
+
+    if (!rolesPermitidos.includes(role)) {
+      console.warn(
+        `⛔ Acceso denegado para ${email} → rol '${role}' no permitido en ${req.originalUrl}`
       );
       return res.status(403).json({
         ok: false,
         msg: `Acceso denegado: se requiere uno de los siguientes roles → ${rolesPermitidos.join(
           ", "
         )}`,
+        ruta: req.originalUrl,
       });
     }
 
-    console.log(`✅ Acceso autorizado para ${user.email} como ${user.role}`);
+    // ✅ Acceso autorizado
+    console.log(
+      `✅ Acceso autorizado para ${email} como ${role} → ${req.originalUrl}`
+    );
     next();
   };
 };

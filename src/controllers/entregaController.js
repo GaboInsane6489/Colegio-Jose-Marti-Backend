@@ -16,8 +16,18 @@ export const registrarEntrega = async (req, res = response) => {
   }
 
   try {
+    // 🧠 Buscar la actividad para extraer el cursoId
+    const actividad = await Actividad.findById(actividadId).select("cursoId");
+    if (!actividad) {
+      return res.status(404).json({
+        ok: false,
+        msg: "Actividad no encontrada",
+      });
+    }
+
     const nuevaEntrega = new EntregaActividad({
       actividadId,
+      cursoId: actividad.cursoId, // ✅ nuevo campo institucional
       estudianteId,
       archivoUrl,
       fechaEntrega: new Date(),

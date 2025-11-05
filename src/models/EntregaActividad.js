@@ -9,6 +9,11 @@ const EntregaSchema = new Schema(
       ref: "Actividad",
       required: true,
     },
+    cursoId: {
+      type: Schema.Types.ObjectId,
+      ref: "Curso", // ✅ referencia institucional
+      required: true,
+    },
     estudianteId: {
       type: Schema.Types.ObjectId,
       ref: "Usuario",

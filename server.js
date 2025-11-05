@@ -4,8 +4,6 @@ import dotenv from "dotenv";
 // 🧭 Detecta si estamos en producción o desarrollo
 const envFile =
   process.env.NODE_ENV === "production" ? ".env.production" : ".env";
-
-// 🧪 Carga el archivo correcto (.env para local, .env.production para Render si lo usas)
 dotenv.config({ path: envFile });
 
 // 🚀 Dependencias principales
@@ -14,6 +12,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // 📁 Rutas institucionales
 import authRoutes from "./src/routes/authRoutes.js";
@@ -24,15 +24,17 @@ import estadisticasRoutes from "./src/routes/estadisticas.js";
 import actividadRoutes from "./src/routes/actividadRoutes.js";
 import entregaRoutes from "./src/routes/entregaRoutes.js";
 import docenteRoutes from "./src/routes/docenteRoutes.js";
+import claseRoutes from "./src/routes/claseRoutes.js";
+import usuarioRoutes from "./src/routes/usuarioRoutes.js"; // ✅ Nueva ruta para usuarios por rol
 
 // 🧠 Inicializa Express
 const app = express();
 
 // 🛡️ Seguridad y CORS
 const allowedOrigins = [
-  process.env.CLIENT_ORIGIN, // 🌐 origen definido en .env o .env.production
-  "http://localhost:5173", // 🧪 frontend local (Vite)
-  "http://localhost:3000", // 🧪 frontend alternativo (React puro)
+  process.env.CLIENT_ORIGIN,
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
 app.use(
@@ -49,40 +51,43 @@ app.use(
   })
 );
 
-// 🛡️ Seguridad básica
 app.use(helmet());
-
-// 📦 Permite recibir JSON grandes (hasta 10MB)
 app.use(express.json({ limit: "10mb" }));
 
 // 🧾 Logging condicional solo en desarrollo
 const isDev = process.env.NODE_ENV !== "production";
 if (isDev) {
-  app.use(morgan("dev")); // 🐛 muestra logs en consola
+  app.use(morgan("dev"));
+  console.log("🧪 Modo desarrollo activo: logs detallados habilitados");
 }
 
-// 🧭 Rutas principales
-app.use("/api/auth", authRoutes);
-app.use("/api", protectedRoutes);
+// 🧭 Rutas protegidas y públicas (orden importa)
+app.use("/api/auth", authRoutes); // ✅ asegura que /api/auth/ping esté disponible
+app.use("/api/estadisticas", estadisticasRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/estudiante", estudianteRoutes);
-app.use("/api/estadisticas", estadisticasRoutes);
 app.use("/api/actividades", actividadRoutes);
 app.use("/api/entregas", entregaRoutes);
-app.use("/api/docente", docenteRoutes); // ✅ Rutas para docentes
+app.use("/api/docente", docenteRoutes);
+app.use("/api/clases", claseRoutes);
+app.use("/api/usuarios", usuarioRoutes); // ✅ nueva ruta activa
+app.use("/api", protectedRoutes); // 🔒 rutas protegidas genéricas
 
 // 🔗 Conexión a MongoDB
 if (!process.env.MONGO_URI) {
   console.error("❌ MONGO_URI no definido en el entorno");
-  process.exit(1); // ⛔ detiene el servidor si no hay URI
+  process.exit(1);
 }
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Conectado a MongoDB"))
+  .then(() => {
+    console.log("✅ Conectado a MongoDB");
+    console.log("📦 Base de datos institucional lista");
+  })
   .catch((err) => {
     console.error("❌ Error de conexión a MongoDB:", err.message);
-    process.exit(1); // ⛔ detiene el servidor si falla la conexión
+    process.exit(1);
   });
 
 // 📡 Ruta raíz institucional
@@ -95,10 +100,23 @@ app.get("/", (req, res) => {
   });
 });
 
+// 🧱 Sirve frontend en producción (si aplica)
+if (process.env.NODE_ENV === "production") {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const clientPath = path.join(__dirname, "dist");
+
+  app.use(express.static(clientPath));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(clientPath, "index.html"));
+  });
+}
+
 // 🚀 Inicia el servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(
     `🚀 Servidor corriendo en puerto ${PORT} (${process.env.NODE_ENV})`
   );
+  console.log("🧠 Sistema institucional activo y trazable");
 });

@@ -10,6 +10,10 @@ import {
   actualizarUsuario,
 } from "../controllers/adminController.js";
 
+import {
+  obtenerTodasLasClasesAdmin, // ✅ nuevo controlador
+} from "../controllers/claseController.js";
+
 const router = express.Router();
 
 /**
@@ -61,5 +65,15 @@ router.put(
   verifyRole(["admin"]),
   actualizarUsuario
 );
+
+/**
+ * 🧠 Obtener todas las clases (solo admin)
+ */
+router.get(
+  "/clases",
+  verifyToken,
+  verifyRole(["admin"]),
+  obtenerTodasLasClasesAdmin
+); // ✅ nueva ruta
 
 export default router;
