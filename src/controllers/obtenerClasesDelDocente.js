@@ -1,13 +1,15 @@
 import Clase from "../models/Clase.js";
 
+/**
+ * 🧑‍🏫 Devuelve las clases asignadas al docente autenticado
+ * GET /api/docente/clases
+ */
 export const obtenerClasesDelDocente = async (req, res) => {
   try {
     const docenteId = req.usuario.id;
 
-    const clases = await Clase.find({ docente: docenteId }).populate(
-      "estudiantes",
-      "nombre email"
-    );
+    const clases = await Clase.find({ docenteId }) // ✅ campo corregido
+      .populate("estudiantes", "nombre email");
 
     res.json({ clases });
   } catch (error) {

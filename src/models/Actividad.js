@@ -45,6 +45,12 @@ const ActividadSchema = new Schema(
       required: [true, "El curso asociado es obligatorio"],
       index: true,
     },
+    claseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Clase", // ✅ vínculo directo con clase
+      required: [true, "La clase asociada es obligatoria"],
+      index: true,
+    },
     docenteId: {
       type: Schema.Types.ObjectId,
       ref: "Usuario",
@@ -90,6 +96,14 @@ const ActividadSchema = new Schema(
 ActividadSchema.virtual("curso", {
   ref: "Curso",
   localField: "cursoId",
+  foreignField: "_id",
+  justOne: true,
+});
+
+// 🔗 Virtual para clase vinculada
+ActividadSchema.virtual("clase", {
+  ref: "Clase",
+  localField: "claseId",
   foreignField: "_id",
   justOne: true,
 });

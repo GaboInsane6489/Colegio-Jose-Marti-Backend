@@ -11,9 +11,14 @@ const claseSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    docente: {
+    materia: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    docenteId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // ✅ referencia corregida al modelo de usuario
+      ref: "User", // ✅ referencia al modelo de usuario
       required: true,
     },
     horario: {
@@ -24,7 +29,7 @@ const claseSchema = new mongoose.Schema(
     estudiantes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User", // ✅ referencia corregida al modelo de usuario
+        ref: "User", // ✅ referencia al modelo de usuario
       },
     ],
     descripcion: {

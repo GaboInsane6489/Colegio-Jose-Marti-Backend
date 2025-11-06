@@ -5,21 +5,22 @@ import Clase from "../models/Clase.js";
  * POST /api/clases
  */
 export const crearClase = async (req, res) => {
-  const { nombre, docenteId, horario, descripcion } = req.body;
+  const { nombre, docenteId, horario, descripcion, materia } = req.body;
 
-  if (!nombre || !docenteId || !horario) {
+  if (!nombre || !docenteId || !horario || !materia) {
     console.warn("⚠️ Datos incompletos para crear clase:", req.body);
     return res.status(400).json({
       ok: false,
-      msg: "Nombre, docente y horario son obligatorios",
+      msg: "Nombre, docente, horario y materia son obligatorios",
     });
   }
 
   try {
     const nuevaClase = await Clase.create({
       nombre: nombre.trim(),
-      docente: docenteId,
+      docenteId,
       horario: horario.trim(),
+      materia: materia.trim(), // ✅ nuevo campo requerido
       descripcion: descripcion?.trim() || "",
       activo: true,
     });
@@ -42,7 +43,7 @@ export const crearClase = async (req, res) => {
 export const obtenerTodasClases = async (req, res) => {
   try {
     const clases = await Clase.find()
-      .populate("docente", "nombre email role")
+      .populate("docenteId", "nombre email role")
       .sort({ createdAt: -1 });
 
     console.log(`📦 Clases encontradas: ${clases.length}`);
@@ -117,7 +118,6 @@ export const eliminarClase = async (req, res) => {
 
 /**
  * 🎯 Asigna estudiantes a una clase institucional
- * Evita duplicados y actualiza el array de estudiantes
  */
 export const asignarEstudiantesAClase = async (req, res) => {
   try {
@@ -127,7 +127,6 @@ export const asignarEstudiantesAClase = async (req, res) => {
     console.log("🆔 Clase ID:", claseId);
     console.log("👥 Estudiantes a asignar:", estudiantesIds);
 
-    // 🧠 Validación de entrada
     if (
       !claseId ||
       !Array.isArray(estudiantesIds) ||
@@ -146,13 +145,9 @@ export const asignarEstudiantesAClase = async (req, res) => {
     const clase = await Clase.findById(claseId);
     if (!clase) {
       console.warn("⚠️ Clase no encontrada:", claseId);
-      return res.status(404).json({
-        ok: false,
-        msg: "Clase no encontrada",
-      });
+      return res.status(404).json({ ok: false, msg: "Clase no encontrada" });
     }
 
-    // 🧠 Evitar duplicados
     const actuales = clase.estudiantes.map((e) => e.toString());
     const nuevos = estudiantesIds.filter((id) => !actuales.includes(id));
 
@@ -160,7 +155,7 @@ export const asignarEstudiantesAClase = async (req, res) => {
 
     if (nuevos.length === 0) {
       console.log("ℹ️ Todos los estudiantes ya estaban asignados.");
-      await clase.populate("estudiantes", "nombre email"); // ✅ poblado anticipado
+      await clase.populate("estudiantes", "nombre email");
       return res.status(200).json({
         ok: true,
         msg: "Todos los estudiantes ya estaban asignados",
@@ -170,7 +165,7 @@ export const asignarEstudiantesAClase = async (req, res) => {
 
     clase.estudiantes.push(...nuevos);
     await clase.save();
-    await clase.populate("estudiantes", "nombre email"); // ✅ poblado tras guardar
+    await clase.populate("estudiantes", "nombre email");
 
     console.log("✅ Clase actualizada correctamente:", clase._id);
     res.json({
@@ -195,7 +190,7 @@ export const asignarEstudiantesAClase = async (req, res) => {
 export const obtenerTodasLasClasesAdmin = async (req, res) => {
   try {
     const clases = await Clase.find()
-      .populate("docente", "nombre email role")
+      .populate("docenteId", "nombre email role")
       .populate("estudiantes", "nombre email")
       .sort({ createdAt: -1 });
 

@@ -7,11 +7,12 @@ import {
   listarPendientes,
   listarTodosUsuarios,
   listarDocentes,
+  listarEstudiantes, // ✅ nuevo controlador
   actualizarUsuario,
 } from "../controllers/adminController.js";
 
 import {
-  obtenerTodasLasClasesAdmin, // ✅ nuevo controlador
+  obtenerTodasLasClasesAdmin, // ✅ controlador de clases
 } from "../controllers/claseController.js";
 
 const router = express.Router();
@@ -57,6 +58,16 @@ router.get(
 router.get("/docentes", verifyToken, verifyRole(["admin"]), listarDocentes);
 
 /**
+ * 👥 Listar todos los estudiantes (solo admin)
+ */
+router.get(
+  "/estudiantes",
+  verifyToken,
+  verifyRole(["admin"]),
+  listarEstudiantes
+); // ✅ nueva ruta
+
+/**
  * ✏️ Actualizar usuario por ID (solo admin)
  */
 router.put(
@@ -74,6 +85,6 @@ router.get(
   verifyToken,
   verifyRole(["admin"]),
   obtenerTodasLasClasesAdmin
-); // ✅ nueva ruta
+);
 
 export default router;

@@ -9,9 +9,14 @@ const EntregaSchema = new Schema(
       ref: "Actividad",
       required: true,
     },
+    claseId: {
+      type: Schema.Types.ObjectId,
+      ref: "Clase", // ✅ nueva referencia directa
+      required: true,
+    },
     cursoId: {
       type: Schema.Types.ObjectId,
-      ref: "Curso", // ✅ referencia institucional
+      ref: "Curso",
       required: true,
     },
     estudianteId: {
@@ -29,15 +34,15 @@ const EntregaSchema = new Schema(
     calificacion: {
       type: Number,
       min: 0,
-      max: 100,
+      max: 20, // 🎯 ajustado a escala venezolana
     },
-    comentarioDocente: {
+    observaciones: {
       type: String,
       trim: true,
     },
     estado: {
       type: String,
-      enum: ["pendiente", "entregado", "vencido", "revisado"],
+      enum: ["pendiente", "entregado", "vencido", "revisado", "calificado"],
       default: "pendiente",
     },
     notificacionId: {

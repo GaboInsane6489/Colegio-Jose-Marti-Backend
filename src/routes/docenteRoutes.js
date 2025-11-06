@@ -1,7 +1,8 @@
 import express from "express";
 import Curso from "../models/Curso.js";
 import Clase from "../models/Clase.js";
-import { verifyToken, verifyRole } from "../middlewares/index.js"; // ✅ Middlewares institucionales
+import User from "../models/User.js"; // ✅ necesario para estudiantes
+import { verifyToken, verifyRole } from "../middlewares/index.js";
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.post(
         grado: grado.trim(),
         seccion: seccion.trim(),
         materias: Array.isArray(materias) ? materias.map((m) => m.trim()) : [],
-        docenteId: req.user.userId, // ✅ Corrección aquí
+        docenteId: req.user.userId, // ✅ campo estandarizado
       });
 
       res.status(201).json({ curso: nuevoCurso });
@@ -68,14 +69,36 @@ router.get(
   verifyRole(["docente"]),
   async (req, res) => {
     try {
-      const clases = await Clase.find({ docente: req.user.userId }).populate(
+      const clases = await Clase.find({ docenteId: req.user.userId }).populate(
         "estudiantes",
         "nombre email"
       );
+
       res.json({ clases });
     } catch (error) {
       console.error("❌ Error al obtener clases:", error.message);
       res.status(500).json({ error: "No se pudieron cargar las clases" });
+    }
+  }
+);
+
+/**
+ * 🧑‍🎓 Obtener estudiantes disponibles (solo docentes)
+ * GET /api/docente/estudiantes
+ */
+router.get(
+  "/estudiantes",
+  verifyToken,
+  verifyRole(["docente"]),
+  async (req, res) => {
+    try {
+      const estudiantes = await User.find({ role: "estudiante" }).select(
+        "nombre email isValidated _id"
+      );
+      res.status(200).json({ estudiantes });
+    } catch (error) {
+      console.error("❌ Error al listar estudiantes:", error.message);
+      res.status(500).json({ error: "No se pudieron cargar los estudiantes" });
     }
   }
 );

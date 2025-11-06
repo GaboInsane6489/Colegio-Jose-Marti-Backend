@@ -1,6 +1,7 @@
 import EntregaActividad from "../models/EntregaActividad.js";
 import Notificacion from "../models/Notificacion.js";
 import Actividad from "../models/Actividad.js";
+import Clase from "../models/Clase.js";
 import { response } from "express";
 
 // 📌 Registrar entrega de estudiante
@@ -16,22 +17,40 @@ export const registrarEntrega = async (req, res = response) => {
   }
 
   try {
-    // 🧠 Buscar la actividad para extraer el cursoId
-    const actividad = await Actividad.findById(actividadId).select("cursoId");
+    // 🧠 Buscar la actividad para extraer cursoId y claseId
+    const actividad = await Actividad.findById(actividadId).select(
+      "cursoId claseId fechaEntrega"
+    );
     if (!actividad) {
-      return res.status(404).json({
+      return res
+        .status(404)
+        .json({ ok: false, msg: "Actividad no encontrada" });
+    }
+
+    // 🔒 Validar que el estudiante esté asignado a la clase
+    const clase = await Clase.findById(actividad.claseId).select("estudiantes");
+    const asignado = clase?.estudiantes?.some((id) => id.equals(estudianteId));
+    if (!asignado) {
+      return res.status(403).json({
         ok: false,
-        msg: "Actividad no encontrada",
+        msg: "No estás asignado a esta clase. No puedes entregar esta actividad.",
       });
     }
 
+    // ⏳ Determinar estado según fecha de entrega
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const estadoEntrega =
+      actividad.fechaEntrega >= hoy ? "entregado" : "vencido";
+
     const nuevaEntrega = new EntregaActividad({
       actividadId,
-      cursoId: actividad.cursoId, // ✅ nuevo campo institucional
+      claseId: actividad.claseId,
+      cursoId: actividad.cursoId,
       estudianteId,
       archivoUrl,
       fechaEntrega: new Date(),
-      estado: "entregado",
+      estado: estadoEntrega,
     });
 
     await nuevaEntrega.save();
@@ -80,7 +99,7 @@ export const listarEntregasPorActividad = async (req, res = response) => {
 // ✏️ Calificar entrega, generar notificación y métricas
 export const calificarEntrega = async (req, res = response) => {
   const { id } = req.params;
-  const { calificacion, comentarioDocente } = req.body;
+  const { calificacion, observaciones } = req.body;
 
   if (calificacion < 0 || calificacion > 20) {
     return res.status(400).json({
@@ -99,7 +118,7 @@ export const calificarEntrega = async (req, res = response) => {
     }
 
     entrega.calificacion = calificacion;
-    entrega.comentarioDocente = comentarioDocente?.trim() || "";
+    entrega.observaciones = observaciones?.trim() || "";
     entrega.estado = "revisado";
 
     const notificacion = await Notificacion.create({

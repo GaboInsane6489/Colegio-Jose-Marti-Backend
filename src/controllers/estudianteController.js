@@ -9,32 +9,32 @@ export const obtenerClases = async (req, res) => {
     const estudianteId = req.user.id;
     console.log("📌 ID del estudiante:", estudianteId);
 
-    const clases = await Clase.find({ estudiantes: estudianteId }).populate(
-      "curso"
-    );
+    const clases = await Clase.find({ estudiantes: estudianteId })
+      .populate("docenteId", "nombre email") // 👨‍🏫 Docente simplificado
+      .populate("estudiantes", "nombre email") // 👥 Compañeros (opcional)
+      .sort({ nombre: 1 });
+
     console.log("📚 Clases encontradas:", clases.length);
 
     res.json({ clases });
   } catch (error) {
     console.error("❌ Error al obtener clases:", error);
-    res
-      .status(500)
-      .json({ message: "Error interno al obtener clases del estudiante." });
+    res.status(500).json({
+      message: "Error interno al obtener clases del estudiante.",
+    });
   }
 };
 
-// 📋 Obtener actividades asignadas por docentes
+// 📋 Obtener actividades asignadas por docentes (modo legacy por curso)
 export const obtenerActividadesEstudiante = async (req, res) => {
   try {
     const estudianteId = req.user.id;
     console.log("📌 ID del estudiante:", estudianteId);
 
-    // Buscar cursos donde el estudiante está inscrito
     const clases = await Clase.find({ estudiantes: estudianteId }).select(
       "curso"
     );
     const cursoIds = clases.map((c) => c.curso);
-    console.log("📦 Cursos activos:", cursoIds.length);
 
     if (cursoIds.length === 0) {
       console.log("⚠️ El estudiante no tiene cursos asignados.");
@@ -63,9 +63,49 @@ export const obtenerActividadesEstudiante = async (req, res) => {
     res.json({ actividades: limpias });
   } catch (error) {
     console.error("❌ Error al obtener actividades:", error);
-    res
-      .status(500)
-      .json({ message: "Error interno al obtener actividades asignadas." });
+    res.status(500).json({
+      message: "Error interno al obtener actividades asignadas.",
+    });
+  }
+};
+
+// 📘 Obtener actividades filtradas por claseIds (modo nuevo)
+export const obtenerActividadesPorClases = async (req, res) => {
+  try {
+    const { claseIds } = req.body;
+
+    if (!Array.isArray(claseIds) || claseIds.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        msg: "No se proporcionaron clases válidas.",
+      });
+    }
+
+    const actividades = await Actividad.find({
+      claseId: { $in: claseIds },
+      estado: "activa",
+    })
+      .sort({ fechaEntrega: 1 })
+      .populate("docenteId", "nombre email");
+
+    const limpias = actividades.filter(
+      (a) =>
+        a &&
+        typeof a === "object" &&
+        a.titulo &&
+        a.materia &&
+        a.fechaEntrega &&
+        a.lapso
+    );
+
+    res.json({ actividades: limpias });
+  } catch (error) {
+    console.error("❌ Error al obtener actividades por clases:", error);
+    res.status(500).json({
+      ok: false,
+      msg: "Error interno al obtener actividades por clases.",
+      error: error.message,
+    });
   }
 };
 
@@ -84,8 +124,8 @@ export const obtenerEntregasEstudiante = async (req, res) => {
     res.json({ entregas });
   } catch (error) {
     console.error("❌ Error al obtener entregas:", error);
-    res
-      .status(500)
-      .json({ message: "Error interno al obtener entregas del estudiante." });
+    res.status(500).json({
+      message: "Error interno al obtener entregas del estudiante.",
+    });
   }
 };

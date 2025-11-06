@@ -87,6 +87,25 @@ export const listarDocentes = async (req, res) => {
 };
 
 /**
+ * 👥 Listar todos los estudiantes institucionales
+ * Filtra por rol "estudiante" y excluye contraseña.
+ * ✅ Incluye _id explícitamente para asignación
+ */
+export const listarEstudiantes = async (req, res) => {
+  try {
+    const estudiantes = await User.find({ role: "estudiante" }).select(
+      "nombre email isValidated _id"
+    );
+    res
+      .status(200)
+      .json({ message: "Estudiantes listados correctamente", estudiantes });
+  } catch (error) {
+    console.error("❌ Error al listar estudiantes:", error.message);
+    res.status(500).json({ message: "Error interno al listar estudiantes" });
+  }
+};
+
+/**
  * ✏️ Actualizar usuario institucional por ID
  * Permite modificar datos, incluyendo contraseña (con hash).
  */
